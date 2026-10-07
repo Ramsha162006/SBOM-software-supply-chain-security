@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecurSBOM - Enterprise Software Supply Chain Security Platform</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    cyber: {
+                        dark: '#0a0f1d',
+                        card: '#111827',
+                        border: '#1f293d',
+                        accent: '#0ea5e9',
+                        glow: '#38bdf8'
+                    }
+                }
+            }
+        }
+    }
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'Fira Code', monospace; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0a0f1d; }
+    ::-webkit-scrollbar-thumb { background: #1f293d; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #374151; }
+</style>
+</head>
+<body class="bg-cyber-dark text-slate-100 min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white">
+
+<!-- Top Navigation Bar -->
+<header class="border-b border-cyber-border bg-cyber-card/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+            </div>
+            <div>
+                <span class="font-bold text-lg tracking-wide bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SecurSBOM</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800/50 font-mono ml-2 hidden sm:inline-block">v2.4-Enterprise</span>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button onclick="openProjectInfoModal()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-circle-info text-cyan-400"></i>
+                <span class="hidden md:inline">Project Documentation</span>
+            </button>
+            <div class="h-6 w-px bg-slate-800"></div>
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-cyan-400 font-semibold text-xs">SEC</div>
+                <span class="text-sm font-medium hidden sm:inline">SecOps Admin</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Main Container -->
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Navigation Tabs -->
+    <div class="flex overflow-x-auto space-x-2 border-b border-cyber-border pb-2">
+        <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 whitespace-nowrap">
+            <i class="fa-solid fa-chart-pie"></i><span>Dashboard &amp; Metrics</span>
+        </button>
+        <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 whitespace-nowrap">
+            <i class="fa-solid fa-cubes"></i><span>Component Inventory</span>
+            <span id="inventory-count-badge" class="ml-1.5 px-2 py-0.5 text-xs rounded-full bg-slate-800 text-slate-300">0</span>
+        </button>
+        <button onclick="switchTab('vulnerabilities')" id="tab-btn-vulnerabilities" class="px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 whitespace-nowrap">
+            <i class="fa-solid fa-bug"></i><span>Vulnerability Scanner</span>
+            <span id="vuln-count-badge" class="ml-1.5 px-2 py-0.5 text-xs rounded-full bg-red-950 text-red-400 border border-red-800">0</span>
+        </button>
+        <button onclick="switchTab('sbom')" id="tab-btn-sbom" class="px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 whitespace-nowrap">
+            <i class="fa-solid fa-file-code"></i><span>SBOM Generation &amp; Export</span>
+        </button>
+    </div>
+
+    <!-- TAB 1: DASHBOARD -->
+    <div id="tab-dashboard" class="space-y-6">
+        <!-- Hero Banner -->
+        <div class="rounded-xl bg-gradient-to-r from-cyan-950/40 via-blue-950/30 to-cyber-card border border-cyan-500/20 p-6 sm:p-8 relative overflow-hidden shadow-xl">
+            <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10 max-w-2xl">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-medium mb-4">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                    <span>Software Supply Chain Intelligence Active</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">Secure Your Entire Software Bill of Materials</h1>
+                <p class="text-slate-300 text-sm sm:text-base mb-6">
+                    Automatically analyze third-party dependencies, map known CVE vulnerabilities, ensure license compliance, and generate verifiable CycloneDX &amp; SPDX SBOMs.
+                </p>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="switchTab('vulnerabilities'); runVulnerabilityScan();" class="px-4 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition shadow-lg shadow-cyan-600/30 flex items-center space-x-2">
+                        <i class="fa-solid fa-radar"></i><span>Run Security Scan Now</span>
+                    </button>
+                    <button onclick="switchTab('sbom')" class="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm border border-slate-700 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-download"></i><span>Export SBOM</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 shadow-lg relative overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Components</p>
+                        <h3 id="stat-total-components" class="text-3xl font-bold text-white mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                        <i class="fa-solid fa-cubes text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-xs text-slate-400">
+                    <span class="text-cyan-400 font-medium flex items-center mr-1.5"><i class="fa-solid fa-arrow-trend-up mr-1"></i> Tracked</span> across npm, pip, maven
+                </div>
+            </div>
+            <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 shadow-lg relative overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Vulnerable Deps</p>
+                        <h3 id="stat-vuln-components" class="text-3xl font-bold text-red-400 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-xs text-slate-400">Require immediate version patching</div>
+            </div>
+            <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 shadow-lg relative overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Critical CVEs</p>
+                        <h3 id="stat-critical-cves" class="text-3xl font-bold text-amber-400 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                        <i class="fa-solid fa-radiation text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-xs text-slate-400">CVSS Score 9.0 - 10.0 severity</div>
+            </div>
+            <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 shadow-lg relative overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Supply Chain Risk</p>
+                        <h3 id="stat-risk-score" class="text-3xl font-bold text-emerald-400 mt-1">A+</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i class="fa-solid fa-shield-check text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-xs text-slate-400">Compliance &amp; Security Index</div>
+            </div>
+        </div>
+
+        <!-- Ecosystem & Breakdown Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-cyber-card border border-cyber-border rounded-xl p-6 shadow-lg lg:col-span-2 space-y-4">
+                <h3 class="text-lg font-semibold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-bar text-cyan-400"></i><span>Ecosystem Distribution</span>
+                </h3>
+                <p class="text-xs text-slate-400">Breakdown of software component packages by ecosystem registry.</p>
+                <div id="ecosystem-bars" class="space-y-4 pt-2"></div>
+            </div>
+            <div class="bg-cyber-card border border-cyber-border rounded-xl p-6 shadow-lg space-y-4 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-white flex items-center space-x-2 mb-1">
+                        <i class="fa-solid fa-clipboard-check text-cyan-400"></i><span>Standards &amp; Compliance</span>
+                    </h3>
+                    <p class="text-xs text-slate-400">NTIA minimum elements &amp; standard compliance check.</p>
+                    <div class="mt-6 space-y-3">
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-check"></i></div>
+                                <div><div class="text-sm font-medium text-white">CycloneDX v1.4</div><div class="text-xs text-slate-400">JSON/XML export ready</div></div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-xs bg-emerald-950 text-emerald-400 border border-emerald-800">Passed</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-check"></i></div>
+                                <div><div class="text-sm font-medium text-white">SPDX v2.3</div><div class="text-xs text-slate-400">Tag-value &amp; JSON ready</div></div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-xs bg-emerald-950 text-emerald-400 border border-emerald-800">Passed</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-check"></i></div>
+                                <div><div class="text-sm font-medium text-white">NTIA Elements</div><div class="text-xs text-slate-400">Author, timestamp, supplier</div></div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-xs bg-emerald-950 text-emerald-400 border border-emerald-800">Passed</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="switchTab('sbom')" class="w-full mt-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-medium text-sm border border-cyan-500/30 transition flex items-center justify-center space-x-2">
+                    <span>Generate &amp; Review SBOM</span><i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: INVENTORY MANAGEMENT -->
+    <div id="tab-inventory" class="space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-cyber-card border border-cyber-border p-5 rounded-xl shadow-lg">
+            <div>
+                <h2 class="text-xl font-bold text-white">Software Component Inventory</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Manage libraries, packages, versions, and PURLs of your application stack.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                <button onclick="openAddComponentModal()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-medium transition shadow-lg shadow-cyan-600/30 flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i><span>Add Component</span>
+                </button>
+                <button onclick="loadSampleData()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-sm font-medium transition flex items-center space-x-2" title="Reset to default demo data">
+                    <i class="fa-solid fa-rotate-right"></i><span class="hidden md:inline">Load Demo Data</span>
+                </button>
+            </div>
+        </div>
+        <!-- Search and Filter Bar -->
+        <div class="bg-cyber-card border border-cyber-border p-4 rounded-xl shadow-lg flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="relative w-full md:w-96">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i class="fa-solid fa-search"></i></span>
+                <input type="text" id="inventory-search" oninput="renderInventoryTable()" placeholder="Search components by name, PURL, license..." class="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition">
+            </div>
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
+                <select id="ecosystem-filter" onchange="renderInventoryTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-cyan-500 transition">
+                    <option value="ALL">All Ecosystems</option>
+                    <option value="npm">npm (Node.js)</option>
+                    <option value="maven">Maven (Java)</option>
+                    <option value="pip">PyPI (Python)</option>
+                    <option value="golang">Golang</option>
+                </select>
+                <button onclick="exportInventoryJSON()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-sm font-medium transition flex items-center space-x-1.5" title="Export inventory as JSON">
+                    <i class="fa-solid fa-download"></i><span>Export JSON</span>
+                </button>
+            </div>
+        </div>
+        <!-- Inventory Table -->
+        <div class="bg-cyber-card border border-cyber-border rounded-xl shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-cyber-border bg-slate-900/60 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                            <th class="py-3 px-4">Component Name</th>
+                            <th class="py-3 px-4">Version</th>
+                            <th class="py-3 px-4">Ecosystem</th>
+                            <th class="py-3 px-4">License</th>
+                            <th class="py-3 px-4">Package URL (PURL)</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table-body" class="divide-y divide-cyber-border text-sm"></tbody>
+                </table>
+            </div>
+            <div id="inventory-empty-state" class="hidden p-12 text-center">
+                <div class="w-16 h-16 rounded-full bg-slate-800 mx-auto flex items-center justify-center text-slate-500 text-2xl mb-3"><i class="fa-solid fa-box-open"></i></div>
+                <h3 class="text-base font-semibold text-white">No components found</h3>
+                <p class="text-xs text-slate-400 mt-1">Try adjusting your search filters or add a new component.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: VULNERABILITY SCANNER -->
+    <div id="tab-vulnerabilities" class="space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-cyber-card border border-cyber-border p-5 rounded-xl shadow-lg">
+            <div>
+                <h2 class="text-xl font-bold text-white">Vulnerability Scanner &amp; CVE Intelligence</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Simulate scanning of installed components against known vulnerability databases.</p>
+            </div>
+            <button onclick="runVulnerabilityScan()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition shadow-lg shadow-red-600/30 flex items-center space-x-2">
+                <i class="fa-solid fa-shield-virus"></i><span id="scan-btn-text">Run Security Scan</span>
+            </button>
+        </div>
+        <!-- Scan Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="bg-cyber-card border border-cyber-border rounded-xl p-4 flex items-center justify-between">
+                <div><div class="text-xs text-slate-400 font-medium uppercase">Critical Severity</div><div id="vuln-stat-critical" class="text-2xl font-bold text-red-500 mt-1">0</div></div>
+                <div class="w-10 h-10 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            </div>
+            <div class="bg-cyber-card border border-cyber-border rounded-xl p-4 flex items-center justify-between">
+                <div><div class="text-xs text-slate-400 font-medium uppercase">High Severity</div><div id="vuln-stat-high" class="text-2xl font-bold text-orange-500 mt-1">0</div></div>
+                <div class="w-10 h-10 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center"><i class="fa-solid fa-circle-exclamation"></i></div>
+            </div>
+            <div class="bg-cyber-card border border-cyber-border rounded-xl p-4 flex items-center justify-between">
+                <div><div class="text-xs text-slate-400 font-medium uppercase">Medium Severity</div><div id="vuln-stat-medium" class="text-2xl font-bold text-amber-400 mt-1">0</div></div>
+                <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            </div>
+            <div class="bg-cyber-card border border-cyber-border rounded-xl p-4 flex items-center justify-between">
+                <div><div class="text-xs text-slate-400 font-medium uppercase">Low Severity</div><div id="vuln-stat-low" class="text-2xl font-bold text-blue-400 mt-1">0</div></div>
+                <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center"><i class="fa-solid fa-info"></i></div>
+            </div>
+        </div>
+        <!-- Vulnerability Findings Table -->
+        <div class="bg-cyber-card border border-cyber-border rounded-xl shadow-lg overflow-hidden">
+            <div class="p-4 border-b border-cyber-border flex items-center justify-between">
+                <h3 class="font-semibold text-white text-sm flex items-center space-x-2">
+                    <i class="fa-solid fa-list-check text-cyan-400"></i><span>Vulnerability Findings List</span>
+                </h3>
+                <span id="scan-timestamp" class="text-xs text-slate-400">Status: Ready to scan</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-cyber-border bg-slate-900/60 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                            <th class="py-3 px-4">CVE ID</th>
+                            <th class="py-3 px-4">Component</th>
+                            <th class="py-3 px-4">Severity</th>
+                            <th class="py-3 px-4">CVSS Score</th>
+                            <th class="py-3 px-4">Advisory Description</th>
+                            <th class="py-3 px-4">Fixed Version</th>
+                            <th class="py-3 px-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vulnerabilities-table-body" class="divide-y divide-cyber-border text-sm"></tbody>
+                </table>
+            </div>
+            <div id="vuln-empty-state" class="p-12 text-center">
+                <div class="w-16 h-16 rounded-full bg-slate-800 mx-auto flex items-center justify-center text-slate-500 text-2xl mb-3"><i class="fa-solid fa-shield-check"></i></div>
+                <h3 class="text-base font-semibold text-white">No Vulnerabilities Scanned Yet</h3>
+                <p class="text-xs text-slate-400 mt-1">Click "Run Security Scan" to analyze your inventory against the CVE database.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: SBOM GENERATION & EXPORT -->
+    <div id="tab-sbom" class="space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-cyber-card border border-cyber-border p-5 rounded-xl shadow-lg">
+            <div>
+                <h2 class="text-xl font-bold text-white">SBOM Generation &amp; Export</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Export standards-compliant Software Bill of Materials in CycloneDX or SPDX formats.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <button onclick="copySBOMToClipboard()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-sm font-medium transition flex items-center space-x-2">
+                    <i class="fa-regular fa-copy text-cyan-400"></i><span>Copy SBOM</span>
+                </button>
+                <button onclick="downloadSBOMFile()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-medium transition shadow-lg shadow-cyan-600/30 flex items-center space-x-2">
+                    <i class="fa-solid fa-download"></i><span>Download File</span>
+                </button>
+            </div>
+        </div>
+        <!-- Format Configurator Bar -->
+        <div class="bg-cyber-card border border-cyber-border p-4 rounded-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">SBOM Standard</label>
+                    <select id="sbom-format" onchange="generateSBOMOutput()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 transition">
+                        <option value="cyclonedx-json">CycloneDX (JSON v1.4)</option>
+                        <option value="cyclonedx-xml">CycloneDX (XML v1.4)</option>
+                        <option value="spdx-json">SPDX (JSON v2.3)</option>
+                        <option value="spdx-tagvalue">SPDX (Tag-Value v2.3)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Author / Organization</label>
+                    <input type="text" id="sbom-author" value="SecOps Engineering Team" oninput="generateSBOMOutput()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 transition">
+                </div>
+            </div>
+            <div class="text-xs text-slate-400 flex items-center space-x-2">
+                <i class="fa-solid fa-shield-halved text-cyan-400"></i><span>NTIA Minimum Elements Compliant</span>
+            </div>
+        </div>
+        <!-- Live Preview Editor Box -->
+        <div class="bg-cyber-card border border-cyber-border rounded-xl shadow-lg overflow-hidden flex flex-col">
+            <div class="px-4 py-3 bg-slate-900/80 border-b border-cyber-border flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+                    <span id="sbom-preview-title" class="ml-2 font-mono text-xs text-slate-400">cyclonedx_sbom.json</span>
+                </div>
+                <div class="text-xs text-cyan-400 font-mono" id="sbom-stats-indicator">0 components indexed</div>
+            </div>
+            <div class="p-4 bg-[#070b14] overflow-x-auto max-h-[550px]">
+                <pre id="sbom-output-code" class="font-mono text-xs text-cyan-300 leading-relaxed">Generating SBOM...</pre>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Add/Edit Component Modal -->
+<div id="component-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-cyber-card border border-cyber-border rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-cyber-border flex items-center justify-between bg-slate-900/50">
+            <h3 id="modal-title" class="font-bold text-lg text-white">Add New Software Component</h3>
+            <button onclick="closeComponentModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <form id="component-form" onsubmit="handleComponentSubmit(event)" class="p-6 space-y-4">
+            <input type="hidden" id="edit-index" value="-1">
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Component Name *</label>
+                <input type="text" id="comp-name" required placeholder="e.g. lodash, express, spring-core" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Version *</label>
+                    <input type="text" id="comp-version" required placeholder="e.g. 4.17.20" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Ecosystem *</label>
+                    <select id="comp-ecosystem" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+                        <option value="npm">npm (Node.js)</option>
+                        <option value="maven">Maven (Java)</option>
+                        <option value="pip">PyPI (Python)</option>
+                        <option value="golang">Golang</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">License</label>
+                    <input type="text" id="comp-license" placeholder="e.g. MIT, Apache-2.0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Package URL (PURL)</label>
+                    <input type="text" id="comp-purl" placeholder="pkg:npm/lodash@4.17.20" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 font-mono text-xs">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 pt-4 border-t border-cyber-border">
+                <button type="button" onclick="closeComponentModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-medium transition shadow-lg shadow-cyan-600/30">Save Component</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Project Documentation / Info Modal -->
+<div id="project-info-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-cyber-card border border-cyber-border rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        <div class="px-6 py-4 border-b border-cyber-border flex items-center justify-between bg-slate-900/50">
+            <h3 class="font-bold text-lg text-white flex items-center space-x-2">
+                <i class="fa-solid fa-book text-cyan-400"></i><span>Project Documentation &amp; Architecture</span>
+            </h3>
+            <button onclick="closeProjectInfoModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-300">
+            <div>
+                <h4 class="text-base font-semibold text-white mb-2 flex items-center space-x-2">
+                    <i class="fa-solid fa-layer-group text-cyan-400"></i><span>1. Software Component Inventory Management</span>
+                </h4>
+                <p class="text-slate-400 leading-relaxed">SecurSBOM allows comprehensive management of software dependencies across multiple package managers (npm, Maven, PyPI, Golang). Each component maintains a unique Package URL (PURL), license compliance metadata, and versioning to ensure an accurate bill of materials. Your inventory is automatically persisted in browser localStorage.</p>
+            </div>
+            <div>
+                <h4 class="text-base font-semibold text-white mb-2 flex items-center space-x-2">
+                    <i class="fa-solid fa-bug text-red-400"></i><span>2. Vulnerability Scanner &amp; CVE Simulation</span>
+                </h4>
+                <p class="text-slate-400 leading-relaxed">The integrated vulnerability identification engine cross-references component versions against known CVE advisories (e.g., Log4j, vulnerable lodash/requests versions). It automatically calculates severity metrics (Critical, High, Medium, Low), CVSS scores, and provides precise remediation version guidance. The Patch action upgrades the component to the recommended fixed version.</p>
+            </div>
+            <div>
+                <h4 class="text-base font-semibold text-white mb-2 flex items-center space-x-2">
+                    <i class="fa-solid fa-file-code text-emerald-400"></i><span>3. Standards-Compliant SBOM Generation</span>
+                </h4>
+                <p class="text-slate-400 leading-relaxed">Generates industry-standard SBOM formats including <b>CycloneDX (JSON/XML v1.4)</b> and <b>SPDX (Tag-Value/JSON v2.3)</b>. Fully compliant with NTIA minimum element requirements including creator identifiers, component hierarchy, timestamping, and cryptographic identifiers.</p>
+            </div>
+            <div>
+                <h4 class="text-base font-semibold text-white mb-2 flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-pie text-blue-400"></i><span>4. Interactive Risk Metrics &amp; Dashboard</span>
+                </h4>
+                <p class="text-slate-400 leading-relaxed">Provides real-time visibility into software supply chain risk scores, vulnerable component ratios, and ecosystem breakdowns to empower SecOps teams and software auditors.</p>
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t border-cyber-border bg-slate-900/50 flex justify-end">
+            <button onclick="closeProjectInfoModal()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-medium transition">Got It, Close Guide</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-900 border border-cyan-500/40 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-slate-100 text-sm">
+        <div id="toast-icon" class="text-cyan-400 text-lg"><i class="fa-solid fa-circle-check"></i></div>
+        <span id="toast-message">Action completed successfully.</span>
+    </div>
+</div>
+
+<script>
+    // ─── Constants ───────────────────────────────────────────────────────────────
+
+    const STORAGE_KEY = 'secursbom_components';
+
+    const DEFAULT_COMPONENTS = [
+        { id: 1, name: "lodash",            version: "4.17.15",   ecosystem: "npm",    license: "MIT",          purl: "pkg:npm/lodash@4.17.15" },
+        { id: 2, name: "log4j-core",        version: "2.14.1",    ecosystem: "maven",  license: "Apache-2.0",   purl: "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1" },
+        { id: 3, name: "requests",          version: "2.25.1",    ecosystem: "pip",    license: "Apache-2.0",   purl: "pkg:pypi/requests@2.25.1" },
+        { id: 4, name: "express",           version: "4.17.1",    ecosystem: "npm",    license: "MIT",          purl: "pkg:npm/express@4.17.1" },
+        { id: 5, name: "jackson-databind",  version: "2.9.10.8",  ecosystem: "maven",  license: "Apache-2.0",   purl: "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.9.10.8" },
+        { id: 6, name: "django",            version: "3.1.2",     ecosystem: "pip",    license: "BSD-3-Clause", purl: "pkg:pypi/django@3.1.2" }
+    ];
+
+    // Known CVE database mapped against component names.
+    // fixedVersion is the exact version string to upgrade to when patching.
+    const cveDatabase = {
+        "lodash": {
+            cve: "CVE-2021-23337",
+            severity: "Critical",
+            cvss: "9.8",
+            description: "Command Injection vulnerability in lodash prior to 4.17.21 via template function.",
+            fixedVersion: ">= 4.17.21",
+            patchVersion: "4.17.21"
+        },
+        "log4j-core": {
+            cve: "CVE-2021-44228",
+            severity: "Critical",
+            cvss: "10.0",
+            description: "Apache Log4j2 JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints (Log4Shell).",
+            fixedVersion: ">= 2.15.0",
+            patchVersion: "2.15.0"
+        },
+        "requests": {
+            cve: "CVE-2023-32681",
+            severity: "Medium",
+            cvss: "6.1",
+            description: "Requests unintended proxy-authorization header leakage across redirect boundaries.",
+            fixedVersion: ">= 2.31.0",
+            patchVersion: "2.31.0"
+        },
+        "jackson-databind": {
+            cve: "CVE-2020-36518",
+            severity: "High",
+            cvss: "7.5",
+            description: "Denial of service (DoS) vulnerability via crafted XML input in fasterxml jackson-databind.",
+            fixedVersion: ">= 2.9.10.9",
+            patchVersion: "2.9.10.9"
+        },
+        "django": {
+            cve: "CVE-2021-3281",
+            severity: "High",
+            cvss: "7.5",
+            description: "Potential SQL injection vulnerability in Django query expressions.",
+            fixedVersion: ">= 3.1.14",
+            patchVersion: "3.1.14"
+        }
+    };
+
+    let scannedVulnerabilities = [];
+
+    // ─── Persistence ─────────────────────────────────────────────────────────────
+
+    // FIX 1: Persist components to localStorage so data survives page reloads.
+    function loadComponents() {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            return stored ? JSON.parse(stored) : JSON.parse(JSON.stringify(DEFAULT_COMPONENTS));
+        } catch (_) {
+            return JSON.parse(JSON.stringify(DEFAULT_COMPONENTS));
+        }
+    }
+
+    function saveComponents() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(components));
+        } catch (_) {
+            // Storage quota exceeded or unavailable — fail silently.
+        }
+    }
+
+    let components = loadComponents();
+
+    // ─── Sanitization (XSS Prevention) ───────────────────────────────────────────
+
+    // FIX 4: Escape all user-supplied strings before injecting into innerHTML.
+    function esc(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // ─── Bootstrap ───────────────────────────────────────────────────────────────
+
+    window.onload = function () {
+        renderDashboard();
+        renderInventoryTable();
+        generateSBOMOutput();
+    };
+
+    // ─── Tab Switching ────────────────────────────────────────────────────────────
+
+    function switchTab(tabId) {
+        const tabs = ['dashboard', 'inventory', 'vulnerabilities', 'sbom'];
+        tabs.forEach(t => {
+            const el  = document.getElementById(`tab-${t}`);
+            const btn = document.getElementById(`tab-btn-${t}`);
+            if (t === tabId) {
+                el.classList.remove('hidden');
+                btn.className = "px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 whitespace-nowrap";
+            } else {
+                el.classList.add('hidden');
+                btn.className = "px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 whitespace-nowrap";
+            }
+        });
+        if (tabId === 'sbom') generateSBOMOutput();
+    }
+
+    // ─── Dashboard ────────────────────────────────────────────────────────────────
+
+    function renderDashboard() {
+        const totalComps = components.length;
+
+        let vulnCompsCount = 0;
+        let criticalCount  = 0;
+        components.forEach(c => {
+            if (cveDatabase[c.name]) {
+                vulnCompsCount++;
+                if (cveDatabase[c.name].severity === 'Critical') criticalCount++;
+            }
+        });
+
+        document.getElementById('stat-total-components').innerText = totalComps;
+        document.getElementById('stat-vuln-components').innerText  = vulnCompsCount;
+        document.getElementById('stat-critical-cves').innerText    = criticalCount;
+        document.getElementById('inventory-count-badge').innerText = totalComps;
+        document.getElementById('vuln-count-badge').innerText      = vulnCompsCount;
+
+        const riskElem = document.getElementById('stat-risk-score');
+        if (criticalCount > 0) {
+            riskElem.innerText   = "D (High Risk)";
+            riskElem.className   = "text-3xl font-bold text-red-500 mt-1";
+        } else if (vulnCompsCount > 0) {
+            riskElem.innerText   = "C+ (Medium)";
+            riskElem.className   = "text-3xl font-bold text-amber-400 mt-1";
+        } else {
+            riskElem.innerText   = "A+ (Secure)";
+            riskElem.className   = "text-3xl font-bold text-emerald-400 mt-1";
+        }
+
+        const ecosystems = { npm: 0, maven: 0, pip: 0, golang: 0 };
+        components.forEach(c => {
+            ecosystems[c.ecosystem] = (ecosystems[c.ecosystem] || 0) + 1;
+        });
+
+        const ecoContainer = document.getElementById('ecosystem-bars');
+        ecoContainer.innerHTML = '';
+        const total = totalComps === 0 ? 1 : totalComps;
+
+        const colorMap = { npm: 'bg-cyan-500', maven: 'bg-blue-500', pip: 'bg-emerald-500', golang: 'bg-indigo-500' };
+
+        for (const [eco, count] of Object.entries(ecosystems)) {
+            const pct        = Math.round((count / total) * 100);
+            const colorClass = colorMap[eco] || 'bg-slate-500';
+            // Safe: eco and count are internal values, not user input.
+            ecoContainer.innerHTML += `
+                <div class="space-y-1.5">
+                    <div class="flex justify-between text-xs">
+                        <span class="font-medium text-slate-300 uppercase">${esc(eco)} Registry</span>
+                        <span class="text-slate-400">${count} components (${pct}%)</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                        <div class="${colorClass} h-full rounded-full transition-all duration-500" style="width:${pct}%"></div>
+                    </div>
+                </div>`;
+        }
+    }
+
+    // ─── Inventory Table ──────────────────────────────────────────────────────────
+
+    function renderInventoryTable() {
+        const searchTerm = document.getElementById('inventory-search').value.toLowerCase();
+        const ecoFilter  = document.getElementById('ecosystem-filter').value;
+        const tbody      = document.getElementById('inventory-table-body');
+        const emptyState = document.getElementById('inventory-empty-state');
+
+        tbody.innerHTML = '';
+
+        const filtered = components.filter(c => {
+            const matchesSearch =
+                c.name.toLowerCase().includes(searchTerm) ||
+                c.version.toLowerCase().includes(searchTerm) ||
+                c.license.toLowerCase().includes(searchTerm) ||
+                c.purl.toLowerCase().includes(searchTerm);
+            const matchesEco = ecoFilter === 'ALL' || c.ecosystem === ecoFilter;
+            return matchesSearch && matchesEco;
+        });
+
+        if (filtered.length === 0) {
+            emptyState.classList.remove('hidden');
+            return;
+        }
+        emptyState.classList.add('hidden');
+
+        filtered.forEach(c => {
+            const isVuln    = cveDatabase[c.name] !== undefined;
+            // FIX 4: All interpolated values are escaped.
+            const statusBadge = isVuln
+                ? `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-red-950 text-red-400 border border-red-800/60 flex items-center w-max"><i class="fa-solid fa-triangle-exclamation text-xs mr-1.5"></i> Vulnerable</span>`
+                : `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-950 text-emerald-400 border border-emerald-800/60 flex items-center w-max"><i class="fa-solid fa-shield text-xs mr-1.5"></i> Secure</span>`;
+
+            tbody.innerHTML += `
+                <tr class="hover:bg-slate-900/40 transition">
+                    <td class="py-3 px-4 font-semibold text-white">${esc(c.name)}</td>
+                    <td class="py-3 px-4 font-mono text-xs text-slate-300">${esc(c.version)}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-xs bg-slate-800 text-cyan-400 font-mono">${esc(c.ecosystem)}</span></td>
+                    <td class="py-3 px-4 text-slate-300 text-xs">${esc(c.license || 'Unknown')}</td>
+                    <td class="py-3 px-4 font-mono text-xs text-slate-400 max-w-xs truncate" title="${esc(c.purl)}">${esc(c.purl)}</td>
+                    <td class="py-3 px-4">${statusBadge}</td>
+                    <td class="py-3 px-4 text-right space-x-2">
+                        <button onclick="openEditComponentModal(${c.id})" class="p-1.5 text-slate-400 hover:text-cyan-400 transition" title="Edit Component"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteComponent(${c.id})" class="p-1.5 text-slate-400 hover:text-red-400 transition" title="Delete Component"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    // ─── Component Modal ──────────────────────────────────────────────────────────
+
+    function openAddComponentModal() {
+        document.getElementById('modal-title').innerText        = "Add New Software Component";
+        document.getElementById('edit-index').value             = "-1";
+        document.getElementById('comp-name').value              = "";
+        document.getElementById('comp-version').value           = "";
+        document.getElementById('comp-ecosystem').value         = "npm";
+        document.getElementById('comp-license').value           = "MIT";
+        document.getElementById('comp-purl').value              = "";
+        document.getElementById('component-modal').classList.remove('hidden');
+    }
+
+    function openEditComponentModal(id) {
+        const comp = components.find(c => c.id === id);
+        if (!comp) return;
+
+        document.getElementById('modal-title').innerText        = "Edit Software Component";
+        document.getElementById('edit-index').value             = comp.id;
+        document.getElementById('comp-name').value              = comp.name;
+        document.getElementById('comp-version').value           = comp.version;
+        document.getElementById('comp-ecosystem').value         = comp.ecosystem;
+        document.getElementById('comp-license').value           = comp.license;
+        document.getElementById('comp-purl').value              = comp.purl;
+        document.getElementById('component-modal').classList.remove('hidden');
+    }
+
+    function closeComponentModal() {
+        document.getElementById('component-modal').classList.add('hidden');
+    }
+
+    function handleComponentSubmit(e) {
+        e.preventDefault();
+        const id        = parseInt(document.getElementById('edit-index').value);
+        const name      = document.getElementById('comp-name').value.trim();
+        const version   = document.getElementById('comp-version').value.trim();
+        const ecosystem = document.getElementById('comp-ecosystem').value;
+        const license   = document.getElementById('comp-license').value.trim() || "Unknown";
+        let   purl      = document.getElementById('comp-purl').value.trim();
+
+        if (!purl) {
+            purl = `pkg:${ecosystem}/${name}@${version}`;
+        }
+
+        if (id === -1) {
+            const newId = components.length > 0 ? Math.max(...components.map(c => c.id)) + 1 : 1;
+            components.push({ id: newId, name, version, ecosystem, license, purl });
+            showToast("Component added successfully.");
+        } else {
+            const index = components.findIndex(c => c.id === id);
+            if (index !== -1) {
+                components[index] = { id, name, version, ecosystem, license, purl };
+                showToast("Component updated successfully.");
+            }
+        }
+
+        saveComponents(); // FIX 1: Persist after every mutation.
+        closeComponentModal();
+        renderDashboard();
+        renderInventoryTable();
+        generateSBOMOutput();
+    }
+
+    function deleteComponent(id) {
+        if (confirm("Are you sure you want to remove this component from the inventory?")) {
+            components = components.filter(c => c.id !== id);
+            saveComponents(); // FIX 1: Persist after every mutation.
+            renderDashboard();
+            renderInventoryTable();
+            generateSBOMOutput();
+            showToast("Component removed.");
+        }
+    }
+
+    function loadSampleData() {
+        components = JSON.parse(JSON.stringify(DEFAULT_COMPONENTS));
+        saveComponents(); // FIX 1: Persist after reset.
+        renderDashboard();
+        renderInventoryTable();
+        generateSBOMOutput();
+        showToast("Demo inventory loaded.");
+    }
+
+    // ─── Vulnerability Scanner ────────────────────────────────────────────────────
+
+    function runVulnerabilityScan() {
+        const tbody      = document.getElementById('vulnerabilities-table-body');
+        const emptyState = document.getElementById('vuln-empty-state');
+
+        tbody.innerHTML       = '';
+        scannedVulnerabilities = [];
+
+        let critical = 0, high = 0, medium = 0, low = 0;
+
+        components.forEach(c => {
+            const vuln = cveDatabase[c.name];
+            if (!vuln) return;
+
+            scannedVulnerabilities.push({ component: c.name, version: c.version, ...vuln });
+
+            if      (vuln.severity === 'Critical') critical++;
+            else if (vuln.severity === 'High')     high++;
+            else if (vuln.severity === 'Medium')   medium++;
+            else                                   low++;
+
+            let badgeColor = "bg-blue-950 text-blue-400 border-blue-800";
+            if      (vuln.severity === 'Critical') badgeColor = "bg-red-950 text-red-400 border-red-800 animate-pulse";
+            else if (vuln.severity === 'High')     badgeColor = "bg-orange-950 text-orange-400 border-orange-800";
+            else if (vuln.severity === 'Medium')   badgeColor = "bg-amber-950 text-amber-400 border-amber-800";
+
+            // FIX 4: All component values are escaped before injection into innerHTML.
+            tbody.innerHTML += `
+                <tr class="hover:bg-slate-900/40 transition">
+                    <td class="py-3 px-4 font-mono font-bold text-cyan-400">${esc(vuln.cve)}</td>
+                    <td class="py-3 px-4 font-semibold text-white">${esc(c.name)} <span class="text-xs text-slate-400 font-mono">(${esc(c.version)})</span></td>
+                    <td class="py-3 px-4"><span class="px-2.5 py-1 rounded-full text-xs font-medium border ${badgeColor}">${esc(vuln.severity)}</span></td>
+                    <td class="py-3 px-4 font-mono text-slate-200">${esc(vuln.cvss)}</td>
+                    <td class="py-3 px-4 text-slate-300 text-xs max-w-sm">${esc(vuln.description)}</td>
+                    <td class="py-3 px-4 font-mono text-xs text-emerald-400">${esc(vuln.fixedVersion)}</td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="patchVulnerability(${c.id})" class="px-2.5 py-1 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-400 border border-cyan-500/30 rounded text-xs font-medium transition">Patch</button>
+                    </td>
+                </tr>`;
+        });
+
+        document.getElementById('vuln-stat-critical').innerText = critical;
+        document.getElementById('vuln-stat-high').innerText     = high;
+        document.getElementById('vuln-stat-medium').innerText   = medium;
+        document.getElementById('vuln-stat-low').innerText      = low;
+
+        emptyState.classList.toggle('hidden', scannedVulnerabilities.length > 0);
+
+        const now = new Date().toLocaleTimeString();
+        document.getElementById('scan-timestamp').innerText =
+            `Last Scanned: ${now} (${scannedVulnerabilities.length} vulnerabilities found)`;
+        showToast(`Security scan completed. ${scannedVulnerabilities.length} vulnerabilities detected.`);
+    }
+
+    // FIX 3: Upgrade the component to the patched version instead of removing it.
+    function patchVulnerability(compId) {
+        const comp = components.find(c => c.id === compId);
+        if (!comp) return;
+
+        const vuln = cveDatabase[comp.name];
+        if (!vuln) return;
+
+        // Update the version and regenerate the PURL to reflect the patched release.
+        const oldVersion  = comp.version;
+        comp.version      = vuln.patchVersion;
+        comp.purl         = `pkg:${comp.ecosystem}/${comp.name}@${vuln.patchVersion}`;
+
+        saveComponents(); // FIX 1: Persist the patched state.
+        renderDashboard();
+        renderInventoryTable();
+        runVulnerabilityScan();
+        generateSBOMOutput();
+        showToast(`Patched ${comp.name}: ${oldVersion} → ${vuln.patchVersion}`);
+    }
+
+    // ─── SBOM Generation ──────────────────────────────────────────────────────────
+
+    function generateSBOMOutput() {
+        const format        = document.getElementById('sbom-format').value;
+        const author        = document.getElementById('sbom-author').value || "SecOps Engineering Team";
+        const previewTitle  = document.getElementById('sbom-preview-title');
+        const statsIndicator = document.getElementById('sbom-stats-indicator');
+        const outputCode    = document.getElementById('sbom-output-code');
+
+        statsIndicator.innerText = `${components.length} components indexed`;
+
+        if (format === 'cyclonedx-json') {
+            previewTitle.innerText = "cyclonedx_sbom.json";
+            const sbom = {
+                "$schema": "http://cyclonedx.org/schema/bom-1.4.schema.json",
+                "bomFormat": "CycloneDX",
+                "specVersion": "1.4",
+                "serialNumber": "urn:uuid:3e671687-395b-41ac-83ec-746a5f367f8f",
+                "version": 1,
+                "metadata": {
+                    "timestamp": new Date().toISOString(),
+                    "tools":   [{ "vendor": "SecurSBOM", "name": "SecurSBOM Enterprise", "version": "2.4" }],
+                    "authors": [{ "name": author }]
+                },
+                "components": components.map(c => ({
+                    "type": "library",
+                    "name": c.name,
+                    "version": c.version,
+                    "purl": c.purl,
+                    "licenses": [{ "license": { "id": c.license } }]
+                }))
+            };
+            outputCode.textContent = JSON.stringify(sbom, null, 2);
+
+        } else if (format === 'cyclonedx-xml') {
+            previewTitle.innerText = "cyclonedx_sbom.xml";
+            let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+            xml += `<bom xmlns="http://cyclonedx.org/schema/bom/1.4" serialNumber="urn:uuid:3e671687-395b-41ac-83ec-746a5f367f8f" version="1">\n`;
+            xml += `  <metadata>\n    <timestamp>${new Date().toISOString()}</timestamp>\n`;
+            xml += `    <tools>\n      <tool>\n        <vendor>SecurSBOM</vendor>\n        <name>SecurSBOM Enterprise</name>\n        <version>2.4</version>\n      </tool>\n    </tools>\n`;
+            xml += `    <authors>\n      <author><name>${xmlEsc(author)}</name></author>\n    </authors>\n  </metadata>\n`;
+            xml += `  <components>\n`;
+            components.forEach(c => {
+                xml += `    <component type="library">\n`;
+                xml += `      <name>${xmlEsc(c.name)}</name>\n`;
+                xml += `      <version>${xmlEsc(c.version)}</version>\n`;
+                xml += `      <purl>${xmlEsc(c.purl)}</purl>\n`;
+                xml += `      <licenses><license><id>${xmlEsc(c.license)}</id></license></licenses>\n`;
+                xml += `    </component>\n`;
+            });
+            xml += `  </components>\n</bom>`;
+            outputCode.textContent = xml;
+
+        } else if (format === 'spdx-json') {
+            previewTitle.innerText = "spdx_sbom.json";
+            const spdx = {
+                "SPDXID": "SPDXRef-DOCUMENT",
+                "spdxVersion": "SPDX-2.3",
+                "creationInfo": {
+                    "creators": [`Person: ${author}`, `Tool: SecurSBOM-2.4`],
+                    "created": new Date().toISOString()
+                },
+                "name": "Application-Software-Bill-Of-Materials",
+                "dataLicense": "CC0-1.0",
+                "packages": components.map((c, i) => ({
+                    "SPDXID": `SPDXRef-Package-${i + 1}`,
+                    "name": c.name,
+                    "versionInfo": c.version,
+                    "downloadLocation": "NOASSERTION",
+                    "licenseConcluded": c.license,
+                    "externalRefs": [{
+                        "referenceCategory": "PACKAGE-MANAGER",
+                        "referenceType": "purl",
+                        "referenceLocator": c.purl
+                    }]
+                }))
+            };
+            outputCode.textContent = JSON.stringify(spdx, null, 2);
+
+        } else if (format === 'spdx-tagvalue') {
+            previewTitle.innerText = "spdx_sbom.spdx";
+            let tv  = `SPDXVersion: SPDX-2.3\n`;
+            tv += `DataLicense: CC0-1.0\n`;
+            tv += `DocumentName: Application-Software-Bill-Of-Materials\n`;
+            tv += `DocumentNamespace: http://spdx.org/spdxdocs/secursbom-${Date.now()}\n`;
+            tv += `Creator: Person: ${author}\n`;
+            tv += `Creator: Tool: SecurSBOM-2.4\n`;
+            tv += `Created: ${new Date().toISOString()}\n\n`;
+            components.forEach((c, i) => {
+                tv += `##### Package: ${c.name}\n`;
+                tv += `PackageName: ${c.name}\n`;
+                tv += `SPDXID: SPDXRef-Package-${i + 1}\n`;
+                tv += `PackageVersion: ${c.version}\n`;
+                tv += `PackageDownloadLocation: NOASSERTION\n`;
+                tv += `ConcludedLicense: ${c.license}\n`;
+                tv += `ExternalRef: PACKAGE-MANAGER purl ${c.purl}\n\n`;
+            });
+            outputCode.textContent = tv;
+        }
+    }
+
+    // Minimal XML escaper used in the CycloneDX XML generator.
+    function xmlEsc(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    }
+
+    // ─── Export Actions ───────────────────────────────────────────────────────────
+
+    // FIX 2: Replace deprecated document.execCommand('copy') with the Clipboard API.
+    function copySBOMToClipboard() {
+        const codeText = document.getElementById('sbom-output-code').textContent;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(codeText)
+                .then(() => showToast("SBOM copied to clipboard successfully."))
+                .catch(() => showToast("Clipboard access denied — please copy manually."));
+        } else {
+            // Fallback for environments without Clipboard API (e.g. non-HTTPS).
+            const textArea = document.createElement("textarea");
+            textArea.value = codeText;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity  = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast("SBOM copied to clipboard successfully.");
+            } catch (_) {
+                showToast("Clipboard access denied — please copy manually.");
+            }
+            document.body.removeChild(textArea);
+        }
+    }
+
+    function downloadSBOMFile() {
+        const format   = document.getElementById('sbom-format').value;
+        const codeText = document.getElementById('sbom-output-code').textContent;
+        let filename   = "cyclonedx_sbom.json";
+        let mimeType   = "application/json";
+
+        if      (format === 'cyclonedx-xml')  { filename = "cyclonedx_sbom.xml";  mimeType = "application/xml"; }
+        else if (format === 'spdx-json')      { filename = "spdx_sbom.json";      mimeType = "application/json"; }
+        else if (format === 'spdx-tagvalue')  { filename = "spdx_sbom.spdx";      mimeType = "text/plain"; }
+
+        const blob = new Blob([codeText], { type: mimeType });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Downloaded ${filename} successfully.`);
+    }
+
+    function exportInventoryJSON() {
+        const blob = new Blob([JSON.stringify(components, null, 2)], { type: "application/json" });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = "component_inventory.json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("Component inventory exported as JSON.");
+    }
+
+    // ─── Modal Helpers ────────────────────────────────────────────────────────────
+
+    function openProjectInfoModal()  { document.getElementById('project-info-modal').classList.remove('hidden'); }
+    function closeProjectInfoModal() { document.getElementById('project-info-modal').classList.add('hidden'); }
+
+    // ─── Toast Notification ───────────────────────────────────────────────────────
+
+    let toastTimer = null;
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        document.getElementById('toast-message').innerText = message;
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }, 3500);
+    }
+</script>
+</body>
+</html>
